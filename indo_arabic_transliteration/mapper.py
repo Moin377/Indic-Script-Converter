@@ -7,6 +7,9 @@ panjabi_converter = PunjabiTransliterator()
 from .sindhi import SindhiTransliterator
 sindhi_converter = SindhiTransliterator()
 
+from .gujarati import GujaratiTransliterator
+gujarati_converter = GujaratiTransliterator()
+
 DELEGATES = {
     # Hindustani languages
     ('hi-IN', 'ur-PK'): hindi_urdu_converter.transliterate_from_hindi_to_urdu,
@@ -19,6 +22,10 @@ DELEGATES = {
     # Sindhi scripts
     ('sd-IN', 'sd-PK'): sindhi_converter.transliterate_from_devanagari_to_sindhi,
     ('sd-PK', 'sd-IN'): sindhi_converter.transliterate_from_sindhi_to_devanagari,
+
+    # Gujarati <> Devanagari
+    ('gu-IN', 'hi-IN'): gujarati_converter.transliterate_from_gujarati_to_devanagari,
+    ('hi-IN', 'gu-IN'): gujarati_converter.transliterate_from_devanagari_to_gujarati,
 }
 
 def script_convert(text: str, from_script: str, to_script: str) -> str:

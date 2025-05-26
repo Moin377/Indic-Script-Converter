@@ -119,6 +119,24 @@ Notes & Resources:
 - You can also use this [JavaScript library](https://github.com/fahadmaqsood/sindhi-transliterator) or [online converter](http://roman.sindhila.edu.pk/).
 - [Sindhi-PersoArabic to Devanagari mapping](https://en.wikipedia.org/wiki/Sindhi_transliteration)
 
+### Gujarati
+
+|Language|Script|Code|
+|--------|------|----|
+|Gujarati|Gujarati|gu-IN|
+|Hindi (Devanagari)|Devanagari|hi-IN|
+
+Example:
+```python
+# Rule-based
+script_convert("ગુજરાતી", 'gu-IN', 'hi-IN') # Expected: गुजराती (or similar Devanagari)
+script_convert("नमस्ते", 'hi-IN', 'gu-IN') # Expected: નમસ્તે (or similar Gujarati)
+```
+
+Notes & Resources:
+- Gujarati is an Indo-Aryan language native to the Indian state of Gujarat. It is written in the Gujarati script, which is an abugida adapted from the Devanagari script.
+- The transliteration implemented here covers the basic consonant mappings. Vowel signs and conjunct character handling will depend on the specifics of the base transliteration engine and may require further refinement for perfect accuracy.
+
 ---
 
 ## Other Methods
