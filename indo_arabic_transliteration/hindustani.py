@@ -1,4 +1,5 @@
 from .base import BaseIndoArabicTransliterator
+from .common import convert_devanagari_to_gujarati, normalize_gujarati
 import re
 
 URDU_POSTPROCESS_MAP = {
@@ -72,3 +73,47 @@ class HindustaniTransliterator(BaseIndoArabicTransliterator):
         if dest_lang == 'ur':
             return self.transliterate_from_hindi_to_urdu(text, nativize)
         return self.transliterate_from_urdu_to_hindi(text, nativize)
+
+
+# -------------------------------------------
+# 🌟 New Class: Gujarati Transliterator
+# -------------------------------------------
+
+class GujaratiTransliterator(BaseIndoArabicTransliterator):
+    def __init__(self, data_dir=None):
+        super().__init__(
+            consonants_map_files=['gujarati/consonants.csv'],
+            data_dir=data_dir
+        )
+        # Load Gujarati-specific postprocessing rules
+        gujarati_postprocess_map_file = os.path.join(self.data_dir, 'gujarati/postprocess.csv')
+        df = pd.read_csv(gujarati_postprocess_map_file, header=None)
+        for i in df.columns:
+            src, tgt = str(df[i][0]).strip(), str(df[i][1]).strip()
+            self.devanagari_postprocess_map[src] = tgt
+        self.devanagari_postprocessor = StringTranslator(self.devanagari_postprocess_map)
+
+    def transliterate_from_urdu_to_gujarati(self, text, nativize=False):
+        """Convert Urdu-Arabic script to Gujarati via Devanagari"""
+        dev_text = super().transliterate_from_urdu_to_hindi(text, nativize=nativize)
+        guj_text = convert_devanagari_to_gujarati(dev_text)
+        guj_text = normalize_gujarati(guj_text)
+        return guj_text
+
+    def transliterate_from_gujarati_to_urdu(self, text, nativize=False):
+        """Convert Gujarati script back to Urdu-Arabic"""
+        # First convert Gujarati → Devanagari
+        from indicnlp.transliterate.unicode_transliterate import UnicodeIndicTransliterator
+        dev_text = UnicodeIndicTransliterator.transliterate(text, 'gu', 'hi')
+
+        # Then Devanagari → Urdu
+        urdu_text = super().transliterate_from_hindi_to_urdu(dev_text, nativize=nativize)
+        return urdu_text
+
+    def __call__(self, text, src_lang, dest_lang, nativize=False):
+        if dest_lang == 'gu':
+            return self.transliterate_from_urdu_to_gujarati(text, nativize)
+        elif dest_lang == 'ur':
+            return self.transliterate_from_gujarati_to_urdu(text, nativize)
+        else:
+            raise ValueError(f"Unsupported destination language: {dest_lang}")
