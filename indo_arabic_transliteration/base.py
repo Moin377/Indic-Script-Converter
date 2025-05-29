@@ -2,10 +2,13 @@ import os
 import re
 import pandas as pd
 from .str_mapper import StringTranslator
-from .common import devanagari_preprocessor, devanagari_short_vowels_remover, devanagari_initial_vowels_abjadify, devanagari_nuqta_consonants_simplifier, devanagari_non_initial_vowels_abjadifier
+from .common import devanagari_preprocessor, devanagari_short_vowels_remover, \
+    devanagari_initial_vowels_abjadify, devanagari_nuqta_consonants_simplifier, \
+    devanagari_non_initial_vowels_abjadifier
 
 from urduhack.normalization.character import remove_diacritics, normalize_characters, normalize_combine_characters
 
+# Shared Map Files
 INITIAL_MAP_FILES = ['initial_vowels.csv']
 MAIN_MAP_FILES = ['vowels.csv']
 MISC_MAP_FILES = ['numerals.csv', 'punctuations.csv']
@@ -14,6 +17,7 @@ ARABIC_MAP_FILES = ['arabic.csv']
 
 HAMZA_FILES = ['hamza.csv']
 HAMZA_COMBO_FILES = ['hamza_combo.csv']
+
 
 class BaseIndoArabicTransliterator:
     '''
@@ -25,7 +29,7 @@ class BaseIndoArabicTransliterator:
         self.final_arabic_to_devanagari_map = {}
         self.arabic_to_devanagari_map_pass1 = {}
         self.arabic_to_devanagari_map_pass2 = {}
-        self.arabic_to_devanagari_cleanup_pass = {} # To handle chars at erraneous/unconventional places
+        self.arabic_to_devanagari_cleanup_pass = {}  # To handle chars at erraneous/unconventional places
         self.hamza_to_devanagari_map = {}
         self.hamza_combo_to_devanagari_map = {}
         self.devanagari_postprocess_map = {}
@@ -54,7 +58,6 @@ class BaseIndoArabicTransliterator:
             df = pd.read_csv(data_dir+map_file, header=None)
             for i in df.columns:
                 arabic_letter, roman_letter, devanagari_letter = str(df[i][0]).strip(), str(df[i][1]).strip(), str(df[i][2]).strip()
-                # TODO: Some of these are initial_only matchers. Handle them
                 self.arabic_to_devanagari_cleanup_pass[arabic_letter] = devanagari_letter
         
         for map_file in HAMZA_FILES:
@@ -90,7 +93,6 @@ class BaseIndoArabicTransliterator:
                 arabic_shadda, devanagari_shadda = arabic_letter+" ّ".strip(), devanagari_letter+'्'+devanagari_letter
                 self.arabic_to_devanagari_map_pass1[arabic_shadda] = devanagari_shadda
                 self.arabic_to_devanagari_map_pass1[arabic_shadda+'ا'] = devanagari_shadda+'ा'
-                # Note on why it's not in pass-2: پکّا is converted as पक्कअ instead of पक्का (Regex sees shadda char as word boundary?)
 
         # Assume medial ی as ी and و as ो
         for i in range(len(consonants)):
@@ -147,3 +149,53 @@ class BaseIndoArabicTransliterator:
 
     def devanagari_nativize(self, text):
         return devanagari_nuqta_consonants_simplifier.translate(text)
+
+
+# -------------------------------------------
+# 🌟 New Class: Gujarati Transliterator
+# -------------------------------------------
+
+class GujaratiIndoArabicTransliterator(BaseIndoArabicTransliterator):
+    """
+    Converts Urdu/Persian-Arabic script text into Gujarati using phonetic mapping.
+    """
+
+    def __init__(self, data_dir=os.path.dirname(__file__) + '/data/'):
+        super().__init__(
+            consonants_map_files=['gujarati/consonants.csv'],
+            data_dir=data_dir
+        )
+        # Load Gujarati-specific post-processing mappings
+        gujarati_postprocess_map_file = os.path.join(data_dir, 'gujarati/postprocess.csv')
+        df = pd.read_csv(gujarati_postprocess_map_file, header=None)
+        for i in df.columns:
+            src, tgt = str(df[i][0]).strip(), str(df[i][1]).strip()
+            self.devanagari_postprocess_map[src] = tgt
+        self.devanagari_postprocessor = StringTranslator(self.devanagari_postprocess_map)
+
+        # Use Gujarati normalizer
+        from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
+        factory = IndicNormalizerFactory()
+        self.gujarati_normalizer = factory.get_normalizer('gu')
+
+    def transliterate(self, text):
+        """Main transliteration function"""
+        text = self.arabic_normalize(text)
+        text = self.initial_arabic_to_devanagari_converter.translate(text)
+        text = self.final_arabic_to_devanagari_converter.translate(text)
+        text = self.arabic_to_devanagari_converter_pass1.translate(text)
+        text = self.arabic_to_devanagari_converter_pass2.translate(text)
+        text = self.hamza_combo_to_devanagari_converter.translate(text)
+        text = self.hamza_to_devanagari_converter.translate(text)
+        text = self.arabic_to_devanagari_final_cleanup.translate(text)
+        text = self.devanagari_normalize(text)
+        text = self.devanagari_remove_short_vowels(text)
+        text = self.devanagari_nativize(text)
+
+        # Convert to Gujarati
+        from sanskrit_to_gujarati import convert_devanagari_to_gujarati
+        text = convert_devanagari_to_gujarati(text)
+
+        # Final Gujarati normalization
+        text = self.gujarati_normalizer.normalize(text)
+        return text
