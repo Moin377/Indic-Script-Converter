@@ -1,3 +1,4 @@
 pandas
 urduhack
 aksharamukha
+indic-nlp-library

@@ -119,6 +119,35 @@ Notes & Resources:
 - You can also use this [JavaScript library](https://github.com/fahadmaqsood/sindhi-transliterator) or [online converter](http://roman.sindhila.edu.pk/).
 - [Sindhi-PersoArabic to Devanagari mapping](https://en.wikipedia.org/wiki/Sindhi_transliteration)
 
+### Gujarati
+
+|Language|Script|Code|
+|--------|------|----|
+|Gujarati|Gujarati|gu-IN|
+|Urdu|Perso-Arabic|ur-PK|
+
+Example:  
+```py
+# Rule-based
+script_convert("ગુજરાત", 'gu-IN', 'ur-PK') # گجرات
+script_convert("بھارت", 'ur-PK', 'gu-IN') # ભારત
+
+# Script conversion only (Gujarati <-> Devanagari)
+script_convert("નમસ્તે", 'gu-IN', 'hi-IN') # नमस्ते
+script_convert("नमस्ते", 'hi-IN', 'gu-IN') # નમસ્તે
+
+# Online-API (bridged through the Hindi-Urdu endpoints of the server)
+online_transliterate("હિન્દુસ્તાની", 'gu-IN', 'ur-PK')
+online_transliterate("حیدرآباد", 'ur-PK', 'gu-IN')
+```
+
+Notes & Resources:  
+- Gujarati is written in its own script, and its Perso-Arabic counterpart is Urdu (just like Hindi-Urdu), so the language-script pairs used are `gu-IN` <-> `ur-PK`.
+- The Gujarati <-> Devanagari conversion is an exact character-table conversion ([gujarati_devanagari.csv](indo_arabic_transliteration/data/gujarati_devanagari.csv)); the Devanagari <-> Perso-Arabic part reuses the Hindustani rule-based engine.
+  - `gu-IN` <-> `hi-IN` (Gujarati script to Devanagari script) is also supported by the same converter.
+- Gujarati nukta consonants (eg. જ઼, ફ઼) are used for Perso-Arabic loanwords, and are retained by the rule-based conversion.
+- [Gujarati alphabet](https://en.wikipedia.org/wiki/Gujarati_alphabet) and [Gujarati-Urdu transliteration](https://en.wikipedia.org/wiki/Hindi%E2%80%93Urdu_transliteration) (the Persian-Arabic side is the same as for Hindi).
+
 ---
 
 ## Other Methods
@@ -127,7 +156,8 @@ Notes & Resources:
 
 - Uses [LibIndicTrans library](https://github.com/libindic/indic-trans) for models
   - Install it by `pip install git+https://github.com/libindic/indic-trans`
-- Currently supports only Hindi-Urdu languages
+- Supports Hindi-Urdu and Gujarati-Urdu language pairs
+  - The Gujarati-Urdu models depend on what LibIndicTrans ships with your installation; the models are loaded lazily, only when they are actually used
 
 API:  
 ```py
@@ -138,7 +168,7 @@ from indo_arabic_transliteration.ml_based import ml_transliterate
 ### Indic-to-Arabic with Diacritics
 
 - Indic scripts are mostly phonetic. Use this to retain diacritics in PersoArabic
-  - Currently only supports Hindustani (Hindi to Urdu) and Punjabi (Gurmukhi to Shahmukhi)
+  - Currently only supports Hindustani (Hindi to Urdu), Punjabi (Gurmukhi to Shahmukhi) and Gujarati (Gujarati to Shahmukhi)
   - Uses [AksharaMukhi library](https://github.com/virtualvinodh/aksharamukha)
 
 API:  
@@ -148,6 +178,14 @@ from indo_arabic_transliteration.lossless_converter import convert_with_diacriti
 ```
 
 ---
+
+## Tests
+
+The test-suite uses `unittest` and covers the rule-based, script-table and lossless conversions:
+
+```
+python -m unittest discover -s tests
+```
 
 ## Support
 

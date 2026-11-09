@@ -4,7 +4,7 @@ import pandas as pd
 from .str_mapper import StringTranslator
 from .common import devanagari_preprocessor, devanagari_short_vowels_remover, \
     devanagari_initial_vowels_abjadify, devanagari_nuqta_consonants_simplifier, \
-    devanagari_non_initial_vowels_abjadifier
+    devanagari_non_initial_vowels_abjadifier, devanagari_compose_nukta
 
 from urduhack.normalization.character import remove_diacritics, normalize_characters, normalize_combine_characters
 
@@ -140,6 +140,7 @@ class BaseIndoArabicTransliterator:
         text = self.devanagari_postprocessor.reverse_translate(text)
         text = self.devanagari_postprocessor.reverse_translate(text)
         text = devanagari_preprocessor.translate(text)
+        text = devanagari_compose_nukta(text) # The map files use the precomposed nukta consonants
         return text
     
     def devanagari_remove_short_vowels(self, text):
@@ -150,52 +151,3 @@ class BaseIndoArabicTransliterator:
     def devanagari_nativize(self, text):
         return devanagari_nuqta_consonants_simplifier.translate(text)
 
-
-# -------------------------------------------
-# 🌟 New Class: Gujarati Transliterator
-# -------------------------------------------
-
-class GujaratiIndoArabicTransliterator(BaseIndoArabicTransliterator):
-    """
-    Converts Urdu/Persian-Arabic script text into Gujarati using phonetic mapping.
-    """
-
-    def __init__(self, data_dir=os.path.dirname(__file__) + '/data/'):
-        super().__init__(
-            consonants_map_files=['gujarati/consonants.csv'],
-            data_dir=data_dir
-        )
-        # Load Gujarati-specific post-processing mappings
-        gujarati_postprocess_map_file = os.path.join(data_dir, 'gujarati/postprocess.csv')
-        df = pd.read_csv(gujarati_postprocess_map_file, header=None)
-        for i in df.columns:
-            src, tgt = str(df[i][0]).strip(), str(df[i][1]).strip()
-            self.devanagari_postprocess_map[src] = tgt
-        self.devanagari_postprocessor = StringTranslator(self.devanagari_postprocess_map)
-
-        # Use Gujarati normalizer
-        from indicnlp.normalize.indic_normalize import IndicNormalizerFactory
-        factory = IndicNormalizerFactory()
-        self.gujarati_normalizer = factory.get_normalizer('gu')
-
-    def transliterate(self, text):
-        """Main transliteration function"""
-        text = self.arabic_normalize(text)
-        text = self.initial_arabic_to_devanagari_converter.translate(text)
-        text = self.final_arabic_to_devanagari_converter.translate(text)
-        text = self.arabic_to_devanagari_converter_pass1.translate(text)
-        text = self.arabic_to_devanagari_converter_pass2.translate(text)
-        text = self.hamza_combo_to_devanagari_converter.translate(text)
-        text = self.hamza_to_devanagari_converter.translate(text)
-        text = self.arabic_to_devanagari_final_cleanup.translate(text)
-        text = self.devanagari_normalize(text)
-        text = self.devanagari_remove_short_vowels(text)
-        text = self.devanagari_nativize(text)
-
-        # Convert to Gujarati
-        from sanskrit_to_gujarati import convert_devanagari_to_gujarati
-        text = convert_devanagari_to_gujarati(text)
-
-        # Final Gujarati normalization
-        text = self.gujarati_normalizer.normalize(text)
-        return text

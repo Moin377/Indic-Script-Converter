@@ -1,6 +1,5 @@
 import pathlib
 from setuptools import setup, find_packages
-import pkg_resources
 
 # The directory containing this file
 HERE = pathlib.Path(__file__).parent
@@ -10,9 +9,9 @@ README = (HERE / "README.md").read_text(encoding='utf-8')
 
 with pathlib.Path('requirements.txt').open() as requirements_txt:
     install_requires = [
-        str(requirement)
-        for requirement
-        in pkg_resources.parse_requirements(requirements_txt)
+        line.strip()
+        for line in requirements_txt
+        if line.strip() and not line.strip().startswith('#')
     ]
 
 # Read meta-data
@@ -30,6 +29,7 @@ setup(
     author="Gokul NC",
     packages=["indo_arabic_transliteration"],
     # packages=find_packages(exclude=("tests",)),
+    package_data={"indo_arabic_transliteration": ["data/*.csv"]},
     include_package_data=True,
     install_requires=install_requires,
     classifiers=[

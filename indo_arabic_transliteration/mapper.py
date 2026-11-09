@@ -7,12 +7,8 @@ panjabi_converter = PunjabiTransliterator()
 from .sindhi import SindhiTransliterator
 sindhi_converter = SindhiTransliterator()
 
-# 🌟 New: Import Gujarati Transliterator
 from .gujarati import GujaratiTransliterator
 gujarati_converter = GujaratiTransliterator()
-
-# Alternatively, define inline if not imported
-# gujarati_converter = GujaratiTransliterator(data_dir='path/to/data')
 
 DELEGATES = {
     # Hindustani languages
@@ -27,10 +23,13 @@ DELEGATES = {
     ('sd-IN', 'sd-PK'): sindhi_converter.transliterate_from_devanagari_to_sindhi,
     ('sd-PK', 'sd-IN'): sindhi_converter.transliterate_from_sindhi_to_devanagari,
 
-    # 🌟 Gujarati to Urdu and vice versa
+    # Gujarati scripts
     ('gu-IN', 'ur-PK'): gujarati_converter.transliterate_from_gujarati_to_urdu,
     ('ur-PK', 'gu-IN'): gujarati_converter.transliterate_from_urdu_to_gujarati,
+    ('gu-IN', 'hi-IN'): gujarati_converter.transliterate_from_gujarati_to_devanagari,
+    ('hi-IN', 'gu-IN'): gujarati_converter.transliterate_from_devanagari_to_gujarati,
 }
+
 
 def script_convert(text: str, from_script: str, to_script: str) -> str:
     """
@@ -38,13 +37,13 @@ def script_convert(text: str, from_script: str, to_script: str) -> str:
 
     Args:
         text (str): Text to be converted
-        from_script (str): Source script (e.g., 'gu-IN', 'ur-PK')
-        to_script (str): Target script (e.g., 'ur-PK', 'gu-IN')
+        from_script (str): Source script (eg. 'hi-IN', 'ur-PK')
+        to_script (str): Target script (eg. 'gu-IN', 'ur-PK')
 
     Returns:
         str: Converted text
     """
     if (from_script, to_script) not in DELEGATES:
         raise ValueError(f"Unsupported conversion from {from_script} to {to_script}")
-    
+
     return DELEGATES[(from_script, to_script)](text)

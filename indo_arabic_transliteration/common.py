@@ -118,72 +118,16 @@ DEVANAGARI_NUQTA_CONSONANTS_SIMPLIFY_MAP = {
 devanagari_nuqta_consonants_simplifier = StringTranslator(DEVANAGARI_NUQTA_CONSONANTS_SIMPLIFY_MAP,
                                                          support_back_translation=False)
 
-# -----------------------------
-# New: Devanagari to Gujarati Mapping
-# -----------------------------
+# Unicode keeps the precomposed nukta consonants (eg. \u0958 QA) out of NFC
+# (they are composition exclusions), while indicnlp's normalizers decompose them.
+# The map files below are written with the precomposed forms, so compose them back.
+DEVANAGARI_NUKTA_SIGN = '़'
+DEVANAGARI_NUKTA_BASE_LETTERS = 'कखगजडढफय'
+DEVANAGARI_NUKTA_PRECOMPOSED_MAP = {base_letter + DEVANAGARI_NUKTA_SIGN: chr(0x0958 + offset)
+                                    for offset, base_letter in enumerate(DEVANAGARI_NUKTA_BASE_LETTERS)}
 
-DEVANAGARI_TO_GUJARATI_MAP = {
-    # Vowels
-    'अ': 'અ', 'आ': 'આ', 'इ': 'ઇ', 'ई': 'ઈ', 'उ': 'ઉ', 'ऊ': 'ઊ',
-    'ऋ': 'ઋ', 'ए': 'એ', 'ऐ': 'ઐ', 'ओ': 'ઓ', 'औ': 'ઔ',
 
-    # Diacritic vowels
-    'ा': 'ા', 'ि': 'િ', 'ी': 'ી', 'ु': 'ુ', 'ू': 'ૂ', 'ृ': 'ૃ',
-    'ॄ': 'ૄ', 'े': 'ે', 'ै': 'ૈ', 'ो': 'ો', 'ौ': 'ૌ',
-
-    # Consonants
-    'क': 'ક', 'ख': 'ખ', 'ग': 'ગ', 'घ': 'ઘ', 'ङ': 'ઙ',
-    'च': 'ચ', 'छ': 'છ', 'ज': 'જ', 'झ': 'ઝ', 'ञ': 'ઞ',
-    'ट': 'ટ', 'ठ': 'ઠ', 'ड': 'ડ', 'ढ': 'ઢ', 'ण': 'ણ',
-    'त': 'ત', 'थ': 'થ', 'द': 'દ', 'ध': 'ધ', 'न': 'ન',
-    'प': 'પ', 'फ': 'ફ', 'ब': 'બ', 'भ': 'ભ', 'म': 'મ',
-    'य': 'ય', 'र': 'ર', 'ल': 'લ', 'व': 'વ', 'श': 'શ',
-    'ष': 'ષ', 'स': 'સ', 'ह': 'હ', 'ळ': 'ળ', 'क्ष': 'ક્ષ',
-    'त्र': 'ત્ર', 'ज्ञ': 'જ્ઞ',
-
-    # Numbers
-    '०': '૦', '१': '૧', '२': '૨', '३': '૩', '४': '૪',
-    '५': '૫', '६': '૬', '७': '૭', '८': '૮', '९': '૯',
-
-    # Symbols
-    '।': '।', '॥': '॥', 'ं': 'ં', 'ः': 'ઃ', 'ँ': 'ઁ',
-    'ॐ': 'ૐ', '।': '।', '।': '।', '।': '।', '।': '।'
-}
-
-# Create a translator object for Devanagari to Gujarati
-devanagari_to_gujarati_translator = StringTranslator(DEVANAGARI_TO_GUJARATI_MAP)
-
-def convert_devanagari_to_gujarati(text):
-    """
-    Converts Devanagari script text into Gujarati script.
-    """
-    return devanagari_to_gujarati_translator.translate(text)
-
-# Optional: Simple Gujarati normalizer
-GUJARATI_NORMALIZATION_MAP = {
-    'ૅ': '',         # Remove Latin short e variant
-    'ૉ': 'ો',        # Normalize to o
-    'ૄ': 'ૃ',        # Normalize rare vocalic r variants
-    'ૡ': 'ૢ',        # Normalize rare vocalic l variants
-    'ઽ': 'હ',        # Replace aspirated h with regular ह
-    '૰': '',         # Rare number forms
-    '૱': '',         # Rare number forms
-    '૲': '',         # Rare number forms
-    '૳': '',         # Rare number forms
-    '૴': '',         # Rare number forms
-    '૵': '',         # Rare number forms
-    '૶': '',         # Rare number forms
-    '૷': '',         # Rare number forms
-    '૸': '',         # Rare number forms
-}
-gujarati_normalizer = StringTranslator(GUJARATI_NORMALIZATION_MAP)
-
-def normalize_gujarati(text):
-    return gujarati_normalizer.translate(text)
-
-# Example usage:
-if __name__ == "__main__":
-    sample_devanagari = "नमस्ते दुनिया"
-    gujarati_text = convert_devanagari_to_gujarati(sample_devanagari)
-    print("Gujarati Output:", gujarati_text)
-    print("Normalized Gujarati:", normalize_gujarati(gujarati_text))
+def devanagari_compose_nukta(text):
+    for decomposed, precomposed in DEVANAGARI_NUKTA_PRECOMPOSED_MAP.items():
+        text = text.replace(decomposed, precomposed)
+    return text
